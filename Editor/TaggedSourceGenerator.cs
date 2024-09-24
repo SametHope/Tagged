@@ -2,27 +2,21 @@
 
 using System;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
-// This script generates a pre-defined script with constants for all tags in the project
 public sealed class TaggedSourceGenerator
 {
     // -------------------- These constants can be modified for customization --------------------
 
-    // What to replace invalid characters with in tag constant names
-    // Different tags that are only differentiated by special chars such as "enemy!", "enemy?" and "enemy " will result in the same constant and not compile
-    // Regex that is used to replace invalid characters replaces all characters that are not a-z, A-Z, 0-9 or _
     private const string TAG_SANITIZATION_REGEX_REPLACEMENT = "_";
-
-    // Prefix for all tag constant names
-    // Modifying this will overwrite existing constant names casuing existing code will need to be updated
-    // Unless this value is a number or a special character that is not allowed in C# variable names and there are no tags starting with numbers, removing (replacing with a empty string) this prefix will not cause any issues
     private const string TAG_CONSTANTS_PREFIX = "T";
-
-    // How often to try and update the generated script file in seconds, not taking into account how often EditorApplication.delayCall is called
     private const double UPDATE_INTERVAL_MIN_SECONDS = 2;
+    private const LogLevel LOG_LEVEL = LogLevel.Warning | LogLevel.Error | LogLevel.Info;
+    private const bool LOG_PASSIVE_REPETITIVE = false;
 
     // -------------------- These constants should not be modified --------------------
 
@@ -30,172 +24,181 @@ public sealed class TaggedSourceGenerator
     private const string GENERATED_FILE_EXTENSION = ".cs";
     private const string GENERATED_FILE_NAME_WITH_EXTENSION = GENERATED_FILE_NAME + GENERATED_FILE_EXTENSION;
     private const string THIS_SCRIPT_NAME_WITH_EXTENSION = "TaggedSourceGenerator.cs";
-    // See http://www.regexstorm.net/tester for testing
     private const string TAG_SANITIZATION_REGEX = "[^a-zA-Z0-9_]";
 
-    // These are defined on class level instead of methods to avoid memory allocation and garbage collection
-    // they are mostly set per-frame
-    private static string __generatedScriptFilePath;
-    private static string __generatedScriptFileFullPath;
-    private static string[] __tags;
-    private static string[] __previousTags;
-    private static string[] _possiblePaths;
-    private static string __formattedTagsString;
-    private static string __newFullScriptContent;
-    private static string __oldFullScriptContent;
-    private static double __lastUpdateTime;
-    private static string __timelessOldContent;
-    private static string __timelessNewContent;
-    private static bool __isQuittingEditorApp;
-    private static string[] __thisScriptsPossiblePaths;
+    private static string _assetsFolderPath;
+    private static string _packagesFolderPath;
+    private static bool _isEditorQuitting;
+    private static double _lastUpdateTime;
+    private static string[] _previousTags;
+    private static string _cachedGeneratedFilePath;
 
-    // Sketchy way of determining the path of the script file but it works
-    private static string AssetsFolderPath => Application.dataPath; // To use when script is inside Assets
-    private static string PackagesFolderPath => Path.GetFullPath(Path.Combine(AssetsFolderPath, "../Library/PackageCache")); // To use when script is inside Packages
+    [Flags]
+    public enum LogLevel
+    {
+        None = 0,
+        Error = 1,
+        Warning = 2,
+        Info = 4,
+        Everything = Error | Warning | Info
+    }
 
     [InitializeOnLoadMethod]
     private static void Initialize()
     {
-        //EditorApplication.update += OnEditorUpdate;
+        _assetsFolderPath = Application.dataPath;
+        _packagesFolderPath = Path.GetFullPath(Path.Combine(_assetsFolderPath, "../Library/PackageCache"));
+        _lastUpdateTime = EditorApplication.timeSinceStartup;
 
-        // This strange way of hooking into the update loop is preferred over refular update delegate to prevent the script from running every frame
         EditorApplication.delayCall += OnEditorUpdate;
-        __lastUpdateTime = EditorApplication.timeSinceStartup;
-        EditorApplication.quitting += () =>
-        {
-            __isQuittingEditorApp = true;
-        };
+        EditorApplication.quitting += () => { _isEditorQuitting = true; };
+
+        Log(LogLevel.Info, "TaggedSourceGenerator initialized. Paths set and update loop started.");
     }
 
     private static void OnEditorUpdate()
     {
-        // Establish a delay call loop
-        EditorApplication.delayCall -= OnEditorUpdate; // Remove the previous (current) call to prevent stacking
-
-        // If we are quitting the editor or got deleted, we must detach from the update loop
-        if(__isQuittingEditorApp) return;
-        if(!AreWeInProject())
+        if(_isEditorQuitting)
         {
-            Debug.LogWarning($"{THIS_SCRIPT_NAME_WITH_EXTENSION} was not found in the project. Tags will not be generated or updated.");
+            Log(LogLevel.Info, $"{nameof(OnEditorUpdate)}: Editor is quitting. Stopping updates.");
             return;
         }
-        else EditorApplication.delayCall += OnEditorUpdate;
 
-        if(Application.isPlaying || EditorApplication.isUpdating || !IntervalPassed()) return;
-        __lastUpdateTime = EditorApplication.timeSinceStartup;
+        EditorApplication.delayCall -= OnEditorUpdate;
+        EditorApplication.delayCall += OnEditorUpdate;
 
-        // Update all known tags
-        __previousTags = __tags;
-        __tags = GetTags();
+        if(Application.isPlaying)
+        {
+            Log(LogLevel.Info, $"{nameof(OnEditorUpdate)}: Application is in Play Mode. Tag generation skipped.");
+            return;
+        }
 
-        // If the tags have not changed, we do not need further processing
-        if(__tags == __previousTags) return;
+        if(!ShouldUpdate()) return;
 
-        // Get the path of the generated script file
-        __generatedScriptFilePath = GetGeneratedScriptFilePath();
-        if(string.IsNullOrEmpty(__generatedScriptFilePath)) return;
+        _lastUpdateTime = EditorApplication.timeSinceStartup;
 
-        // Determine full path of the generated script file
-        __generatedScriptFileFullPath = Path.GetFullPath(__generatedScriptFilePath);
+        if(_cachedGeneratedFilePath == null && !TryLocateGeneratedFile(out _cachedGeneratedFilePath))
+        {
+            Log(LogLevel.Warning, $"{nameof(OnEditorUpdate)}: Could not locate generated file. Ensure 'Tagged' folder with a 'Runtime' subfolder exists.");
+            return;
+        }
 
-        // Generate the full script content
-        __newFullScriptContent = GetFullScriptContent(__tags);
+        string[] currentTags = UnityEditorInternal.InternalEditorUtility.tags;
+        if(_previousTags != null && currentTags.SequenceEqual(_previousTags))
+        {
+            if(LOG_PASSIVE_REPETITIVE)
+            {
+                Log(LogLevel.Info, $"{nameof(OnEditorUpdate)}: Tags unchanged. Skipping regeneration.");
+            }
+            return;
+        }
 
-        // Do not overwrite the file if the content is the same
-        if(__oldFullScriptContent == __newFullScriptContent) return;
+        string newScriptContent = GenerateScriptContent(currentTags);
 
         try
         {
-            // Try to write the new content to the file
-            File.WriteAllText(__generatedScriptFileFullPath, __newFullScriptContent);
-            __oldFullScriptContent = __newFullScriptContent;
+            File.WriteAllText(_cachedGeneratedFilePath, newScriptContent);
+            _previousTags = currentTags;
+            Log(LogLevel.Info, $"{nameof(OnEditorUpdate)}: Tags successfully generated and saved to: {_cachedGeneratedFilePath}");
         }
         catch(Exception e)
         {
-            Debug.LogWarning($"Could not write to {__generatedScriptFileFullPath}. Tags will not be generated or updated. Error: {e.Message}");
+            Log(LogLevel.Error, $"{nameof(OnEditorUpdate)}: Failed to write tag constants file. Error: {e.Message}");
         }
     }
 
-    private static bool IntervalPassed()
+    private static bool ShouldUpdate()
     {
-        return (EditorApplication.timeSinceStartup - __lastUpdateTime) > UPDATE_INTERVAL_MIN_SECONDS;
-    }
+        double currentTime = EditorApplication.timeSinceStartup;
+        double timeSinceLastUpdate = currentTime - _lastUpdateTime;
+        bool shouldUpdate = timeSinceLastUpdate >= UPDATE_INTERVAL_MIN_SECONDS;
 
-    private static string[] GetTags()
-    {
-        return UnityEditorInternal.InternalEditorUtility.tags;
-    }
-
-    private static string GetGeneratedScriptFilePath()
-    {
-        if(AreWeInPackages())
+        if(LOG_PASSIVE_REPETITIVE)
         {
-            _possiblePaths = Directory.GetFiles(PackagesFolderPath, GENERATED_FILE_NAME_WITH_EXTENSION, SearchOption.AllDirectories);
-        }
-        else if(AreWeInAssets())
-        {
-            _possiblePaths = Directory.GetFiles(AssetsFolderPath, GENERATED_FILE_NAME_WITH_EXTENSION, SearchOption.AllDirectories);
-        }
-        else
-        {
-            Debug.LogError($"Could not determine if we are in the assets or in the packages folder as {THIS_SCRIPT_NAME_WITH_EXTENSION} was not found. on either the packages or assets Tags will not be generated or updated.");
-            return null;
+            if(shouldUpdate)
+            {
+                Log(LogLevel.Info, $"{nameof(ShouldUpdate)}: Update interval reached. Time since last update: {timeSinceLastUpdate:F2} seconds.");
+            }
+            else
+            {
+                double timeLeft = UPDATE_INTERVAL_MIN_SECONDS - timeSinceLastUpdate;
+                Log(LogLevel.Info, $"{nameof(ShouldUpdate)}: Time interval not reached yet. {timeLeft:F2} seconds left.");
+            }
         }
 
-        if(_possiblePaths.Length == 0)
-        {
-            Debug.LogWarning($"Could not find {GENERATED_FILE_NAME_WITH_EXTENSION} in the project. Tags will not be generated or updated. Try creating a script with this name in the project.");
-            return null;
-        }
-        else if(_possiblePaths.Length > 1)
-        {
-            Debug.LogWarning($"Found multiple {GENERATED_FILE_NAME_WITH_EXTENSION} in the project on the following paths. Tags will not be generated or updated. Please remove duplicates." + string.Join(',', _possiblePaths));
-            return null;
-        }
-        else
-        {
-            return _possiblePaths[0];
-        }
+        return shouldUpdate;
     }
 
-    private static bool AreWeInProject()
+    private static bool TryLocateGeneratedFile(out string generatedFilePath)
     {
-        return AreWeInPackages() || AreWeInAssets();
-    }
-
-    private static bool AreWeInPackages()
-    {
-        return Directory.GetFiles(PackagesFolderPath, THIS_SCRIPT_NAME_WITH_EXTENSION, SearchOption.AllDirectories).Length > 0;
-    }
-    private static bool AreWeInAssets()
-    {
-        return Directory.GetFiles(AssetsFolderPath, THIS_SCRIPT_NAME_WITH_EXTENSION, SearchOption.AllDirectories).Length > 0;
-    }
-
-    private static string GetFullScriptContent(string[] tags)
-    {
-        __formattedTagsString = string.Empty;
-        for(int i = 0; i < tags.Length; i++)
+        if(!string.IsNullOrEmpty(_cachedGeneratedFilePath))
         {
-            __formattedTagsString += $"    public const string {TAG_CONSTANTS_PREFIX}{GetSanitizedTagName(tags[i])} = \"{tags[i]}\";\n";
+            generatedFilePath = _cachedGeneratedFilePath;
+            Log(LogLevel.Info, $"{nameof(TryLocateGeneratedFile)}: Using cached generated file path: {generatedFilePath}");
+            return true;
         }
 
-        return PARTIAL_SCRIPT_TEMPLATE.Replace("[TAGS]", __formattedTagsString).Replace("[TIMESTAMP]", DateTime.Now.ToString());
+        Log(LogLevel.Info, $"{nameof(TryLocateGeneratedFile)}: Locating generated file...");
+
+        string[] packagePaths = Directory.GetDirectories(_packagesFolderPath, "com.samethope.tagged", SearchOption.TopDirectoryOnly);
+        Log(LogLevel.Info, $"{nameof(TryLocateGeneratedFile)}: Searched package paths: {_packagesFolderPath}");
+
+        if(packagePaths.Length > 0)
+        {
+            generatedFilePath = Path.Combine(packagePaths[0], GENERATED_FILE_NAME_WITH_EXTENSION);
+            _cachedGeneratedFilePath = generatedFilePath;
+            Log(LogLevel.Info, $"{nameof(TryLocateGeneratedFile)}: Located generated file in packages at {generatedFilePath}");
+            return true;
+        }
+
+        string[] taggedFolders = Directory.GetDirectories(_assetsFolderPath, "Tagged", SearchOption.AllDirectories);
+        Log(LogLevel.Info, $"{nameof(TryLocateGeneratedFile)}: Searched asset paths: {_assetsFolderPath}");
+
+        foreach(string taggedDir in taggedFolders)
+        {
+            string runtimeDir = Path.Combine(taggedDir, "Runtime");
+            Log(LogLevel.Info, $"{nameof(TryLocateGeneratedFile)}: Searched directory: {taggedDir}");
+
+            if(Directory.Exists(runtimeDir))
+            {
+                generatedFilePath = Path.Combine(runtimeDir, GENERATED_FILE_NAME_WITH_EXTENSION);
+                _cachedGeneratedFilePath = generatedFilePath;
+                Log(LogLevel.Info, $"{nameof(TryLocateGeneratedFile)}: Located generated file in assets at {generatedFilePath}");
+                return true;
+            }
+        }
+
+        generatedFilePath = null;
+        Log(LogLevel.Info, $"{nameof(TryLocateGeneratedFile)}: Generated file not found in package cache or assets.");
+        return false;
     }
 
-    private static string GetSanitizedTagName(string tag)
+    private static string GenerateScriptContent(string[] tags)
     {
-        return Regex.Replace(tag, TAG_SANITIZATION_REGEX, TAG_SANITIZATION_REGEX_REPLACEMENT);
-    }
+        var tagConstants = new StringBuilder();
+        foreach(string tag in tags)
+        {
+            string sanitizedTagName = Regex.Replace(tag, TAG_SANITIZATION_REGEX, TAG_SANITIZATION_REGEX_REPLACEMENT);
+            tagConstants.AppendLine($"    public const string {TAG_CONSTANTS_PREFIX}{sanitizedTagName} = \"{tag}\";");
+        }
 
-    private const string PARTIAL_SCRIPT_TEMPLATE =
-@"
+        Log(LogLevel.Info, $"{nameof(GenerateScriptContent)}: Generated content for {tags.Length} tags.");
+        return $@"
 // This file is auto-generated. Do not modify it manually.
 // Whenever a tag is added or removed, this file will be regenerated.
 public partial class Tagged
-{
-[TAGS]}";
-}
+{{
+{tagConstants}
+}}";
+    }
 
+    private static void Log(LogLevel level, string message)
+    {
+        if((LOG_LEVEL & level) != 0 || LOG_LEVEL == LogLevel.Everything)
+        {
+            Debug.Log($"[{level}] {message}");
+        }
+    }
+}
 
 #endif
