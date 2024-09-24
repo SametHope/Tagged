@@ -140,7 +140,7 @@ public sealed class TaggedSourceGenerator
 
         Log(LogLevel.Info, $"{nameof(TryLocateGeneratedFile)}: Locating generated file...");
 
-        string[] packagePaths = Directory.GetDirectories(_packagesFolderPath, "com.samethope.tagged", SearchOption.TopDirectoryOnly);
+        string[] packagePaths = Directory.GetDirectories(_packagesFolderPath, "com.samethope.tagged*", SearchOption.TopDirectoryOnly);
         Log(LogLevel.Info, $"{nameof(TryLocateGeneratedFile)}: Searched package paths: {_packagesFolderPath}");
 
         if(packagePaths.Length > 0)
