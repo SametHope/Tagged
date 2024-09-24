@@ -29,6 +29,7 @@ public sealed class TaggedSourceGenerator
     private const string GENERATED_FILE_NAME = "TaggedSourceGenerated";
     private const string GENERATED_FILE_EXTENSION = ".cs";
     private const string GENERATED_FILE_NAME_WITH_EXTENSION = GENERATED_FILE_NAME + GENERATED_FILE_EXTENSION;
+    private const string THIS_SCRIPT_NAME_WITH_EXTENSION = "TaggedSourceGenerator.cs";
     // See http://www.regexstorm.net/tester for testing
     private const string TAG_SANITIZATION_REGEX = "[^a-zA-Z0-9_]";
 
@@ -46,6 +47,7 @@ public sealed class TaggedSourceGenerator
     private static string __timelessOldContent;
     private static string __timelessNewContent;
     private static bool __isQuittingEditorApp;
+    private static string[] __thisScriptsPossiblePaths;
 
     [InitializeOnLoadMethod]
     private static void Initialize()
@@ -65,15 +67,10 @@ public sealed class TaggedSourceGenerator
     {
         // Establish a delay call loop
         EditorApplication.delayCall -= OnEditorUpdate; // Remove the previous (current) call to prevent stacking
-        if(__isQuittingEditorApp)
-        {
-            // Quitting can't be stopped, so we don't need to re-add the delay call or even log anything (probably)
-            //Debug.Log("Quitting editor application. Tagged source generator will stop running.");
-        }
-        else
-        {
-            EditorApplication.delayCall += OnEditorUpdate;
-        }
+
+        // If we are quitting the editor or got deleted, we must detach from the update loop
+        if(__isQuittingEditorApp || !AreWeStillInProject()) return;
+        else EditorApplication.delayCall += OnEditorUpdate;
 
         if(Application.isPlaying || EditorApplication.isUpdating || !IntervalPassed()) return;
         __lastUpdateTime = EditorApplication.timeSinceStartup;
@@ -108,6 +105,12 @@ public sealed class TaggedSourceGenerator
         {
             Debug.LogWarning($"Could not write to {__generatedScriptFileFullPath}. Tags will not be generated or updated. Error: {e.Message}");
         }
+    }
+
+    private static bool AreWeStillInProject()
+    {
+        __thisScriptsPossiblePaths = Directory.GetFiles(Application.dataPath, THIS_SCRIPT_NAME_WITH_EXTENSION, SearchOption.AllDirectories);
+        return __thisScriptsPossiblePaths.Length > 0;
     }
 
     private static bool IntervalPassed()
