@@ -49,6 +49,9 @@ public sealed class TaggedSourceGenerator
     private static bool __isQuittingEditorApp;
     private static string[] __thisScriptsPossiblePaths;
 
+    private static string AssetsFolderPath => Application.dataPath; // To use when script is inside Assets
+    private static string PackagesFolderPath => Path.GetFullPath(Path.Combine(AssetsFolderPath, "../Library/PackageCache")); // To use when script is inside Packages
+
     [InitializeOnLoadMethod]
     private static void Initialize()
     {
@@ -69,7 +72,12 @@ public sealed class TaggedSourceGenerator
         EditorApplication.delayCall -= OnEditorUpdate; // Remove the previous (current) call to prevent stacking
 
         // If we are quitting the editor or got deleted, we must detach from the update loop
-        if(__isQuittingEditorApp || !AreWeStillInProject()) return;
+        if(__isQuittingEditorApp) return;
+        if(!AreWeInProject())
+        {
+            Debug.LogWarning($"{THIS_SCRIPT_NAME_WITH_EXTENSION} was not found in the project. Tags will not be generated or updated.");
+            return;
+        }
         else EditorApplication.delayCall += OnEditorUpdate;
 
         if(Application.isPlaying || EditorApplication.isUpdating || !IntervalPassed()) return;
@@ -107,12 +115,6 @@ public sealed class TaggedSourceGenerator
         }
     }
 
-    private static bool AreWeStillInProject()
-    {
-        __thisScriptsPossiblePaths = Directory.GetFiles(Application.dataPath, THIS_SCRIPT_NAME_WITH_EXTENSION, SearchOption.AllDirectories);
-        return __thisScriptsPossiblePaths.Length > 0;
-    }
-
     private static bool IntervalPassed()
     {
         return (EditorApplication.timeSinceStartup - __lastUpdateTime) > UPDATE_INTERVAL_MIN_SECONDS;
@@ -125,21 +127,48 @@ public sealed class TaggedSourceGenerator
 
     private static string GetGeneratedScriptFilePath()
     {
-        _possiblePaths = Directory.GetFiles(Application.dataPath, GENERATED_FILE_NAME_WITH_EXTENSION, SearchOption.AllDirectories);
+        if(AreWeInPackages())
+        {
+            _possiblePaths = Directory.GetFiles(PackagesFolderPath, GENERATED_FILE_NAME_WITH_EXTENSION, SearchOption.AllDirectories);
+        }
+        else if(AreWeInAssets())
+        {
+            _possiblePaths = Directory.GetFiles(AssetsFolderPath, GENERATED_FILE_NAME_WITH_EXTENSION, SearchOption.AllDirectories);
+        }
+        else
+        {
+            Debug.LogError($"Could not determine if we are in the assets or in the packages folder as {THIS_SCRIPT_NAME_WITH_EXTENSION} was not found. Tags will not be generated or updated.");
+            return null;
+        }
+
         if(_possiblePaths.Length == 0)
         {
-            Debug.LogError($"Could not find {GENERATED_FILE_NAME_WITH_EXTENSION} in the project. Tags will not be generated or updated. Please create a script with this name in the project.");
+            Debug.LogWarning($"Could not find {GENERATED_FILE_NAME_WITH_EXTENSION} in the project. Tags will not be generated or updated. Please create a script with this name in the project.");
             return null;
         }
         else if(_possiblePaths.Length > 1)
         {
-            Debug.LogError($"Found multiple {GENERATED_FILE_NAME_WITH_EXTENSION} in the project. Tags will not be generated or updated. Please remove duplicates.");
+            Debug.LogWarning($"Found multiple {GENERATED_FILE_NAME_WITH_EXTENSION} in the project. Tags will not be generated or updated. Please remove duplicates.");
             return null;
         }
         else
         {
             return _possiblePaths[0];
         }
+    }
+
+    private static bool AreWeInProject()
+    {
+        return AreWeInPackages() || AreWeInAssets();
+    }
+
+    private static bool AreWeInPackages()
+    {
+        return Directory.GetFiles(PackagesFolderPath, THIS_SCRIPT_NAME_WITH_EXTENSION, SearchOption.AllDirectories).Length > 0;
+    }
+    private static bool AreWeInAssets()
+    {
+        return Directory.GetFiles(AssetsFolderPath, THIS_SCRIPT_NAME_WITH_EXTENSION, SearchOption.AllDirectories).Length > 0;
     }
 
     private static string GetFullScriptContent(string[] tags)
