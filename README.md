@@ -3,7 +3,7 @@ Flexible and easy to use tag system for Unity supporting GameObjects, Components
 
 This package includes a source generator for compile-time constant tags that automatically update when necessary, a custom attribute for selecting one or multiple existing tags from the inspector, abstraction-based design with interfaces for easy expansion, a MonoBehaviour implementation of the interface for quick entry and optional extension methods for convenience.  
 
-Tagged works similiar to other common Unity tag system implementations by using a custom component as its default implementation. Main difference of this package is, it is based around interfaces to support tagging everything such as ScriptableObjects, MonoBehaviours and even regular C# objects.  
+Tagged works similiar to other common Unity tag system implementations by using a custom component as its default implementation. Main difference of this package is, it is based around interfaces to support tagging everything such as ScriptableObjects, MonoBehaviours and even regular C# objects and comes with other utilities.
  
  
 # Installation / Removal
@@ -25,7 +25,7 @@ Whether you add the package through the Unity Package Manager or place the files
 Alternatively, if installed manually into the Assets folder, delete the package files directly from the project directory.
 
 ### Notes
-You might encounter timestamp warnings or messages about immutable package modifications during installation or removal, but these are harmless. If warnings persist or escalate due to source generation not detaching from the editor's loop, restarting the Unity editor should resolve the issue.
+You might encounter timestamp warnings or messages about immutable package modifications during installation or removal, but these are harmless. If warnings persist or escalate due to source generation not detaching from the editor's loop, reimporting the assets or restarting the editor should resolve the issue.
 
  
 # Usage
