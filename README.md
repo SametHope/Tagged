@@ -25,7 +25,7 @@ Whether you add the package through the Unity Package Manager or place the files
 Alternatively, if installed manually into the Assets folder, delete the package files directly from the project directory.
 
 ### Notes
-You might encounter timestamp warnings or messages about immutable package modifications during installation or removal, but these are harmless. If warnings persist or escalate due to source generation not detaching from the editor's loop, restarting the Unity editor should resolve the issue.
+You might encounter timestamp warnings or messages about immutable package modifications during installation or removal, but these are harmless. If warnings persist or escalate due to source generation not detaching from the editor's loop, reimporting the assets or restarting the editor should resolve the issue.
 
  
 # Usage
