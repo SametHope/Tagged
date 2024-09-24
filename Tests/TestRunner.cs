@@ -6,6 +6,7 @@ public class TestRunner : MonoBehaviour
     public bool LogSuccesses = true;
     private int _successCounter = 0;
     private int _failureCounter = 0;
+    [field: Tagged, SerializeField] public string Example { get; private set; } // Use with fields 
 
     [Tagged] public int MisusedAttribute;
     [Tagged] public List<float> MisusedAttributes;

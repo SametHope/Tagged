@@ -68,7 +68,7 @@ public class TagSelectorPropertyDrawer : PropertyDrawer
         else
         {
             // Non tag-manager tag, just display this field without the popup
-            property.stringValue = EditorGUI.TextField(position, label.text, $"{property.stringValue}", EditorStyles.miniTextField);
+            property.stringValue = EditorGUI.TextField(position, label.text, $"{property.stringValue}", EditorStyles.textField);
         }
 
         if(EditorGUI.EndChangeCheck())

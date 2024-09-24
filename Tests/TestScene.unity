@@ -553,6 +553,7 @@ MonoBehaviour:
   MisusedAttributes:
   - 0
   CorrectlyUsedAttribute: Untagged
+  CorrectlyUsedAttributes: []
 --- !u!4 &1580895868
 Transform:
   m_ObjectHideFlags: 0
@@ -580,8 +581,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c010fdd96fcf9ce4eb43e7565a84f249, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _tags:
-  - Untagged
+  _tags: []
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
