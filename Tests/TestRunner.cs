@@ -10,6 +10,7 @@ public class TestRunner : MonoBehaviour
     [Tagged] public int MisusedAttribute;
     [Tagged] public List<float> MisusedAttributes;
     [Tagged] public string CorrectlyUsedAttribute;
+    [Tagged] public List<string> CorrectlyUsedAttributes;
 
     private int _totalCounter => _successCounter + _failureCounter;
 
@@ -95,7 +96,10 @@ public class TestRunner : MonoBehaviour
         TestCondition(Tagged.RemoveTags(normalPoco, "TAG_1"), false);
 
         // Check lots of tags
-        TestCondition(Tagged.AddTags(this, "TAG_0", "TAG_1", "TAG_2", "TAG_3", "TAG_4", "TAG_5", "TAG_6", "TAG_7", "TAG_8", "TAG_9"), true);
+        TestCondition(Tagged.AddTags(this, "TAG_1", "TAG_2", "TAG_3", "TAG_4", "TAG_5", "TAG_6", "TAG_7", "TAG_8", "TAG_9"), true);
+        TestCondition(Tagged.IsTagged(this, "TAG_1", "TAG_2", "TAG_3", "TAG_4", "TAG_5", "TAG_6", "TAG_7", "TAG_8", "TAG_9"), true);
+        TestCondition(Tagged.IsTagged(this, "TAG_1", "TAG_9"), true);
+        TestCondition(Tagged.RemoveTags(this, "TAG_1", "TAG_2", "TAG_3", "TAG_4", "TAG_5", "TAG_6", "TAG_7", "TAG_8", "TAG_9"), true);
 
 
         LogTestResults();
