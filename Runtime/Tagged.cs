@@ -25,9 +25,11 @@ public partial class Tagged : MonoBehaviour, ITagged
     private void OnValidate()
     {
         if(_tags == null) _tags = new List<string>();
+        if(_tagSet == null) _tagSet = new HashSet<string>(_tags);
     }
     private void Awake()
     {
+        if(_tags == null) _tags = new List<string>();
         _tagSet = new HashSet<string>(_tags);
         CheckAndRemoveDuplicates();
     }
@@ -52,6 +54,7 @@ public partial class Tagged : MonoBehaviour, ITagged
     /// <inheritdoc/>
     public bool IsTagged(params string[] tags)
     {
+        if(tags == null || tags.Length == 0) return false;
         foreach(var tag in tags)
         {
             if(!_tagSet.Contains(tag)) return false;
@@ -62,6 +65,7 @@ public partial class Tagged : MonoBehaviour, ITagged
     /// <inheritdoc/>
     public bool AddTags(params string[] tags)
     {
+        if(tags == null || tags.Length == 0) return false;
         bool added = false;
         foreach(var tag in tags)
         {
@@ -77,6 +81,7 @@ public partial class Tagged : MonoBehaviour, ITagged
     /// <inheritdoc/>
     public bool RemoveTags(params string[] tags)
     {
+        if(tags == null || tags.Length == 0) return false;
         bool removed = false;
         foreach(var tag in tags)
         {

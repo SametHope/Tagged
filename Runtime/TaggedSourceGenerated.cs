@@ -10,4 +10,5 @@ public partial class Tagged
     public const string TMainCamera = "MainCamera";
     public const string TPlayer = "Player";
     public const string TGameController = "GameController";
+    public const string TTAG_0 = "TAG_0";
 }
