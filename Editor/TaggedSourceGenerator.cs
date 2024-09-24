@@ -49,6 +49,7 @@ public sealed class TaggedSourceGenerator
     private static bool __isQuittingEditorApp;
     private static string[] __thisScriptsPossiblePaths;
 
+    // Sketchy way of determining the path of the script file but it works
     private static string AssetsFolderPath => Application.dataPath; // To use when script is inside Assets
     private static string PackagesFolderPath => Path.GetFullPath(Path.Combine(AssetsFolderPath, "../Library/PackageCache")); // To use when script is inside Packages
 
@@ -137,18 +138,18 @@ public sealed class TaggedSourceGenerator
         }
         else
         {
-            Debug.LogError($"Could not determine if we are in the assets or in the packages folder as {THIS_SCRIPT_NAME_WITH_EXTENSION} was not found. Tags will not be generated or updated.");
+            Debug.LogError($"Could not determine if we are in the assets or in the packages folder as {THIS_SCRIPT_NAME_WITH_EXTENSION} was not found. on either the packages or assets Tags will not be generated or updated.");
             return null;
         }
 
         if(_possiblePaths.Length == 0)
         {
-            Debug.LogWarning($"Could not find {GENERATED_FILE_NAME_WITH_EXTENSION} in the project. Tags will not be generated or updated. Please create a script with this name in the project.");
+            Debug.LogWarning($"Could not find {GENERATED_FILE_NAME_WITH_EXTENSION} in the project. Tags will not be generated or updated. Try creating a script with this name in the project.");
             return null;
         }
         else if(_possiblePaths.Length > 1)
         {
-            Debug.LogWarning($"Found multiple {GENERATED_FILE_NAME_WITH_EXTENSION} in the project. Tags will not be generated or updated. Please remove duplicates.");
+            Debug.LogWarning($"Found multiple {GENERATED_FILE_NAME_WITH_EXTENSION} in the project on the following paths. Tags will not be generated or updated. Please remove duplicates." + string.Join(',', _possiblePaths));
             return null;
         }
         else
