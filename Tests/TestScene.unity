@@ -528,6 +528,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1580895868}
   - component: {fileID: 1580895867}
+  - component: {fileID: 1580895869}
   m_Layer: 0
   m_Name: TestRunner
   m_TagString: Untagged
@@ -547,7 +548,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00b04308d76ee4a4b974ba5de8716e41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LogSuccesses: 1
+  LogSuccesses: 0
+  MisusedAttribute: 0
+  MisusedAttributes:
+  - 0
+  CorrectlyUsedAttribute: Untagged
 --- !u!4 &1580895868
 Transform:
   m_ObjectHideFlags: 0
@@ -563,6 +568,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1580895869
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1580895866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c010fdd96fcf9ce4eb43e7565a84f249, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _tags:
+  - Untagged
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

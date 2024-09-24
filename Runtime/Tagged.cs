@@ -35,16 +35,15 @@ public partial class Tagged : MonoBehaviour, ITagged
     }
     private void CheckAndRemoveDuplicates()
     {
-        if(_tags.Count > 1)
+        if(_tags.Count <= 1) return;
+
+        _tags.Sort();
+        for(int i = _tags.Count - 1; i > 0; i--)
         {
-            _tags.Sort();
-            for(int i = _tags.Count - 1; i > 0; i--)
+            if(_tags[i] == _tags[i - 1])
             {
-                if(_tags[i] == _tags[i - 1])
-                {
-                    Debug.LogWarning($"[Tagged] Duplicate tag \"{_tags[i]}\" found on GameObject \"{gameObject.name}\". Removing duplicate.", this);
-                    _tags.RemoveAt(i);
-                }
+                Debug.LogWarning($"[Tagged] Duplicate tag \"{_tags[i]}\" found on GameObject \"{gameObject.name}\". Removing duplicate.", this);
+                _tags.RemoveAt(i);
             }
         }
     }
@@ -55,7 +54,7 @@ public partial class Tagged : MonoBehaviour, ITagged
     public bool IsTagged(params string[] tags)
     {
         if(tags == null || tags.Length == 0) return false;
-        foreach(var tag in tags)
+        foreach(string tag in tags)
         {
             if(!_tagSet.Contains(tag)) return false;
         }
@@ -66,32 +65,32 @@ public partial class Tagged : MonoBehaviour, ITagged
     public bool AddTags(params string[] tags)
     {
         if(tags == null || tags.Length == 0) return false;
-        bool added = false;
-        foreach(var tag in tags)
+        bool addedAny = false;
+        foreach(string tag in tags)
         {
             if(_tagSet.Add(tag))
             {
                 _tags.Add(tag);
-                added = true;
+                addedAny = true;
             }
         }
-        return added;
+        return addedAny;
     }
 
     /// <inheritdoc/>
     public bool RemoveTags(params string[] tags)
     {
         if(tags == null || tags.Length == 0) return false;
-        bool removed = false;
-        foreach(var tag in tags)
+        bool removedAny = false;
+        foreach(string tag in tags)
         {
             if(_tagSet.Remove(tag))
             {
                 _tags.Remove(tag);
-                removed = true;
+                removedAny = true;
             }
         }
-        return removed;
+        return removedAny;
     }
 
     /// <summary>

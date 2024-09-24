@@ -6,6 +6,11 @@ public class TestRunner : MonoBehaviour
     public bool LogSuccesses = true;
     private int _successCounter = 0;
     private int _failureCounter = 0;
+
+    [Tagged] public int MisusedAttribute;
+    [Tagged] public List<float> MisusedAttributes;
+    [Tagged] public string CorrectlyUsedAttribute;
+
     private int _totalCounter => _successCounter + _failureCounter;
 
     private void Start()
@@ -88,6 +93,10 @@ public class TestRunner : MonoBehaviour
         TestCondition(Tagged.IsTagged(normalPoco, "TAG_0", "TAG_1"), false);
         TestCondition(Tagged.RemoveTags(normalPoco, "TAG_0"), false);
         TestCondition(Tagged.RemoveTags(normalPoco, "TAG_1"), false);
+
+        // Check lots of tags
+        TestCondition(Tagged.AddTags(this, "TAG_0", "TAG_1", "TAG_2", "TAG_3", "TAG_4", "TAG_5", "TAG_6", "TAG_7", "TAG_8", "TAG_9"), true);
+
 
         LogTestResults();
     }
