@@ -549,6 +549,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LogSuccesses: 0
+  <Example>k__BackingField: Finish
   MisusedAttribute: 0
   MisusedAttributes:
   - 0
@@ -581,7 +582,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c010fdd96fcf9ce4eb43e7565a84f249, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _tags: []
+  _tags:
+  - Player
+  - MainCamera
+  - non unity tag
+  - added via script
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
