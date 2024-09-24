@@ -1,7 +1,7 @@
 # Tagged
 Flexible and easy to use tag system for Unity supporting GameObjects, Components, and interfaces (aka anything you can edit or derive from) with multiple or no tags. 
 
-This package includes a source generator for compile-time constant tags that automatically update, a custom attribute for selecting one or multiple existing tags from the inspector, abstraction-based design with interfaces for easy expansion, a MonoBehaviour implementation of the interface for ease of use and optional extension methods for convenience.  
+This package includes a source generator for compile-time constant tags that automatically update when necessary, a custom attribute for selecting one or multiple existing tags from the inspector, abstraction-based design with interfaces for easy expansion, a MonoBehaviour implementation of the interface for quick entry and optional extension methods for convenience.  
 
 Tagged works similiar to other common Unity tag system implementations by using a custom component as its default implementation. Main difference of this package is, it is based around interfaces to support tagging everything such as ScriptableObjects, MonoBehaviours and even regular C# objects.
 
