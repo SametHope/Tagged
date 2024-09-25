@@ -7,26 +7,18 @@ Tagged works similiar to other common Unity tag system implementations by using 
  
  
 # Installation / Removal
-This package is best installed using the Unity Package Manager via its git URL.
-Whether you add the package through the Unity Package Manager or place the files manually into the Assets directory, the package will automatically handle source generation.
-
+This package is **not installed using the Unity Package Manager** due to source generation. It must be installed inside Assets directory.  
+  
 ## Installation Steps:
-1. Open the Unity Package Manager.
-2. Select "Add package from git URL..."
-3. Paste `https://github.com/SametHope/Tagged.git#main` as the URL.
-4. Done.
+1. Download the **.unitypackage** for this package from releases
+2. Drag and drop it to your project
+3. **Make sure** Tagged directory goes into **Assets/Plugins/SametHope**
+4. Import
+5. Done
 
 ## Removal Steps:
-1. Open the Unity Package Manager.
-2. Find the "Tagged" package.
-3. Select "Remove" to uninstall it.
-4. Done.
-
-Alternatively, if installed manually into the Assets folder, delete the package files directly from the project directory.
-
-### Notes
-You might encounter timestamp warnings or messages about immutable package modifications during installation or removal, but these are harmless. If warnings persist or escalate due to source generation not detaching from the editor's loop, reimporting the assets or restarting the editor should resolve the issue.
-
+1. Remove the whole package at once by deleting the Tagged directory.
+2. Done
  
 # Usage
 ## Tag Selection From The Inspector  
