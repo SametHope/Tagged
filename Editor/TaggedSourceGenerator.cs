@@ -19,7 +19,7 @@ public sealed class TaggedSourceGenerator
     private const double UPDATE_INTERVAL_MIN_SECONDS = 2;  // Interval in seconds to check for updates
     private const string TAG_CONSTANTS_REGEX_SPECIAL_CHAR_REPLACEMENT = "_";  // Replacement for special characters in tag names
 
-    private const int EXTRA_LOGS_LEVEL = 2;
+    private const int EXTRA_LOGS_LEVEL = 0;
     // 0 -> No extra logs, only errors and warnings
     // 1 -> 0 + Initialization, deinitialization, file generation
     // 2 -> 1 + Tag changes (Recommended for debugging)
