@@ -7,11 +7,11 @@ Tagged works similiar to other common Unity tag system implementations by using 
  
  
 # Installation / Removal
-This package is **not installed using the Unity Package Manager** due to source generation. It must be installed inside Assets directory.  
+This package is **not installed using the Unity Package Manager** due to source generation. It must be installed inside your Assets folder.  
   
 ## Installation Steps:
 1. Download the **.unitypackage** for this package from [releases](https://github.com/SametHope/Tagged/releases)
-2. Drag and drop it to your project
+2. Drag and drop the package to your Assets folder
 3. **Make sure** Tagged directory goes into **Assets/Plugins/SametHope**
 4. Import
 5. Done
