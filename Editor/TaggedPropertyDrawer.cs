@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -49,9 +50,16 @@ public class TagSelectorPropertyDrawer : PropertyDrawer
 
         if(_selectedIndex != -1)
         {
-            // Draw the popup box
-            int newIndex = EditorGUI.Popup(position, label.text, _selectedIndex, _tags);
+            // Create a tooltip-enabled label if a TooltipAttribute is present
+            var tooltipAttribute = fieldInfo.GetCustomAttribute<TooltipAttribute>();
+            var tippedLabel = new GUIContent(label.text, tooltipAttribute?.tooltip);
 
+            // Convert tags to GUIContent array for tooltip support
+            var contents = _tags.Select(tag => new GUIContent(tag)).ToArray();
+
+            // Draw the popup box with the tooltip-enabled label
+            int newIndex = EditorGUI.Popup(position, tippedLabel, _selectedIndex, contents);
+            
             // If "Add Tag..." is selected, open the tag manager
             if(newIndex == _tags.Length - 1)
             {
